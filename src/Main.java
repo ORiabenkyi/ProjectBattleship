@@ -34,17 +34,17 @@ class Game {
     public void start() {
 
         p1.fillBoard();
-        p2.fillBoard();
-        Player player = null, opponent = null;
-        boolean finished = false;
+//        p2.fillBoard();
+//        Player player = null, opponent = null;
+//        boolean finished = false;
         //while(!finished) {
             //player.printboard();
-            player = player == p1 ? p2 : p1;
-            opponent = player == p1 ? p2 : p1;
-            String shotResult = player.shoting(opponent);
-            System.out.println(shotResult);
+//            player = player == p1 ? p2 : p1;
+//            opponent = player == p1 ? p2 : p1;
+//            String shotResult = player.shoting(opponent);
+//            System.out.println(shotResult);
 
-            finished = opponent.isAllShipsSunk();
+//            finished = opponent.isAllShipsSunk();
         //}
     }
 }
@@ -67,6 +67,12 @@ class BoardCell {
     public BoardCell(String name, char cellDisplay) {
         this.name = name;
         this.cellDisplay = cellDisplay;
+        this.ship = null;
+    }
+
+    public void setPosition(int positionHorizontal,int positionVertical) {
+        this.positionHorizontal = positionHorizontal;
+        this.positionVertical   = positionVertical;
     }
 
     public BoardCell(String name, char cellDisplay, String color, Ship ship) {
@@ -83,10 +89,21 @@ class BoardCell {
     public char getCellDisplay() {
         return cellDisplay;
     }
+
+    public boolean checkCell() {
+        boolean resultCheck = true;
+        if (this.getShip() == null) {
+            resultCheck = false;
+            return resultCheck;
+        }
+        BoardCell[] listCellArround;
+        return resultCheck;
+    }
 }
 
 class Board {
     public final char firstLeter = 'A';
+    public static final String allowedLetters = "abcdefghijABCDEFGHIJ";
     public final char lastLeter  = (char)((int)firstLeter + Main.sizeBoard);
     protected Player player;
     protected BoardCell[][] board;
@@ -103,6 +120,7 @@ class Board {
         for (char i = firstLeter; i < lastLeter ; i++, count++) {
             for (int j = 0; j < Main.sizeBoard; j++) {
                 board[count][j] = new BoardCell("" + i + (j+1),'~');
+                board[count][j].setPosition(count,j);
             }
         }
     }
@@ -111,8 +129,48 @@ class Board {
 //        boolean resultRun = true;
 //        return resultRun;
 //    }
-    public boolean placeShip(Ship ship, String coordinatArray) {
+    public boolean placeShip(Ship ship, String coordinatString) {
         boolean resultRun = true;
+        String[] coordinatesArray = coordinatString.split(" ");
+        BoardCell[] listCell;
+
+        String firsCoorfinat = coordinatesArray[0];
+        String secondCoordinat = coordinatesArray[1];
+        //check that is a line
+        //1 line same liters
+        //2 line same numbers
+        int numberPartFirst = Integer.parseInt(firsCoorfinat.replaceAll("([a-zA-Z])", ""));
+        String leterPartFirst  = firsCoorfinat.replaceAll("([0-9])", "");;
+        int numberPartSecond = Integer.parseInt(secondCoordinat.replaceAll("([a-zA-Z])", ""));
+        String leterPartSecond  = secondCoordinat.replaceAll("([0-9])", "");;
+        if (leterPartFirst.length() == 1 && leterPartSecond.length() == 1 && leterPartSecond.equals(leterPartFirst)){
+            int count = ship.getLength();
+            listCell = new BoardCell[count];
+            leterPartFirst = leterPartFirst.toUpperCase();
+            char letter = leterPartFirst.charAt(0);
+            int coloms = Math.abs(firstLeter - letter)+1;
+            if ( coloms != count) {
+                resultRun = false;
+                return resultRun;
+            }
+            int firsPosition = (numberPartFirst>numberPartSecond?numberPartFirst:numberPartSecond);
+            //int lastPosition = (numberPartFirst>numberPartSecond?numberPartSecond:numberPartFirst);;
+            coloms--;
+            for (int i = 0;i < count;i++){
+                listCell[i] = this.getCell(coloms, (firsPosition+i));
+            }
+            for (BoardCell shipCell:listCell) {
+                shipCell.checkCell();
+            }
+        } else if (numberPartFirst <= 10 && numberPartSecond > 1 && numberPartSecond == numberPartSecond) {
+            int count = ship.getLength();
+            listCell = new BoardCell[count];
+            for (int i = 0;i < count;i++){
+                listCell[i] = null;
+            }
+        }
+
+
         return resultRun;
     }
     public boolean checkLine(String start, String end) {
@@ -168,6 +226,7 @@ class Player {
         return income;
     }
     public String requestCoordinates(Ship ship) {
+        String resultMetod = "";
         System.out.printf("Enter the coordinates of %s (%d cells):\n",ship.getName(),ship.getLength());
         String income = Main.incomeScaner.nextLine();
         String[] coordinatesArray = income.split(" ");
@@ -175,7 +234,7 @@ class Player {
             System.out.println("Error! Wrong ship location! Try again:");
             return requestCoordinates(ship);
         };
-        String firsCoorfinat = coordinatesArray[0];
+        String firsCoorfinat   = coordinatesArray[0];
         String secondCoordinat = coordinatesArray[1];
         //check that is a line
         //1 line same liters
@@ -186,13 +245,25 @@ class Player {
         String leterPartSecond  = secondCoordinat.replaceAll("([0-9])", "");;
 
         if (leterPartFirst.length() == 1 && leterPartSecond.length() == 1 && leterPartSecond.equals(leterPartFirst)){
-            System.out.println("First - " + leterPartFirst + numberPartFirst);
-            System.out.println("Second - " + leterPartFirst + numberPartSecond);
-            // leter line
-        } else if (leterPartFirst.length() >= 1 || leterPartSecond.length() >= 1) {
+            if ((Board.allowedLetters.indexOf(leterPartFirst) % 10) == -1) {
+                System.out.println("Error! Wrong ship location! Try again:");
+                return requestCoordinates(ship);
+            }else if (numberPartFirst > 10||numberPartSecond > 10) {
+                System.out.println("Error! Wrong ship location! Try again:");
+                return requestCoordinates(ship);
+            }else if ((Math.abs(numberPartFirst - numberPartSecond) + 1) != ship.getLength()) {
+                System.out.printf("Error! Wrong length of the %s! Try again:\n",ship.getName());
+                return requestCoordinates(ship);
+            }
+            resultMetod = leterPartFirst + numberPartFirst + " " + leterPartFirst + numberPartSecond;
+            return resultMetod;
+             // leter line
+        } else if (leterPartFirst.length() > 1 || leterPartSecond.length() > 1) {
             System.out.println("Error! Wrong ship location! Try again:");
             return requestCoordinates(ship);
-        } else if (numberPartFirst <= 10 && numberPartSecond > 10 && numberPartSecond == numberPartSecond) {
+        } else if (numberPartFirst <= 10 && numberPartSecond > 1 && numberPartSecond == numberPartSecond) {
+            System.out.println("First - " + leterPartFirst + numberPartFirst);
+            System.out.println("Second - " + leterPartFirst + numberPartSecond);
             //line number
         } else {
             System.out.println("Error! Wrong ship location! Try again:");
@@ -240,13 +311,12 @@ class Player {
         }
     }
     public void fillBoard() {
-        /*
         for (Ship eachShip :
                 Game.listShip) {
-            this.getShipsBoardPlayer().placeShip(eachShip, requestCoordinates(eachShip));
+            this.printboard(Board.typeBoard.OWN);
+            while (this.getShipsBoardPlayer().placeShip(eachShip, requestCoordinates(eachShip)) == false) { System.out.println("Wrong"); };
             leftShip.add(eachShip.getName());
-        }*/
-        this.printboard(Board.typeBoard.OWN);
+        }
     }
 }
 class Step {
