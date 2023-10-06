@@ -34,6 +34,7 @@ class Game {
     public void start() {
 
         p1.fillBoard();
+        p1.printboard(Board.typeBoard.OWN);
 //        p2.fillBoard();
 //        Player player = null, opponent = null;
 //        boolean finished = false;
@@ -75,6 +76,14 @@ class BoardCell {
         this.positionVertical   = positionVertical;
     }
 
+    public int getPositionHorizontal() {
+        return positionHorizontal;
+    }
+
+    public int getPositionVertical() {
+        return positionVertical;
+    }
+
     public BoardCell(String name, char cellDisplay, String color, Ship ship) {
         this.name = name;
         this.cellDisplay = cellDisplay;
@@ -86,19 +95,19 @@ class BoardCell {
         return name;
     }
 
+    public void setShip(Ship ship) {
+        this.ship = ship;
+        this.setCellDisplay('O');
+    }
+
+    public void setCellDisplay(char cellDisplay) {
+        this.cellDisplay = cellDisplay;
+    }
+
     public char getCellDisplay() {
         return cellDisplay;
     }
 
-    public boolean checkCell() {
-        boolean resultCheck = true;
-        if (this.getShip() == null) {
-            resultCheck = false;
-            return resultCheck;
-        }
-        BoardCell[] listCellArround;
-        return resultCheck;
-    }
 }
 
 class Board {
@@ -112,6 +121,13 @@ class Board {
     public Board(Player player) {
         this.player = player;
         this.initializeBoard();
+    }
+    public BoardCell getCell(int x, int y) {
+        return this.board[x][y];
+    }
+
+    public BoardCell[][] getBoard() {
+        return board;
     }
 
     protected void initializeBoard() {
@@ -148,25 +164,62 @@ class Board {
             listCell = new BoardCell[count];
             leterPartFirst = leterPartFirst.toUpperCase();
             char letter = leterPartFirst.charAt(0);
-            int coloms = Math.abs(firstLeter - letter)+1;
+            int coloms = Math.abs(numberPartSecond - numberPartFirst)+1;
             if ( coloms != count) {
                 resultRun = false;
                 return resultRun;
             }
-            int firsPosition = (numberPartFirst>numberPartSecond?numberPartFirst:numberPartSecond);
+            int firsPosition = (numberPartFirst>numberPartSecond?numberPartSecond:numberPartFirst);
             //int lastPosition = (numberPartFirst>numberPartSecond?numberPartSecond:numberPartFirst);;
             coloms--;
+            int rowNumber = Math.abs('A' - letter);
             for (int i = 0;i < count;i++){
-                listCell[i] = this.getCell(coloms, (firsPosition+i));
+                listCell[i] = this.getCell(rowNumber, (firsPosition+i-1));
             }
             for (BoardCell shipCell:listCell) {
-                shipCell.checkCell();
+                if (this.checkCellOnShip(shipCell)) {
+                    resultRun = false;
+                    return resultRun;
+                }
+                if (this.checkCellAroundOnShips(shipCell)) {
+                    resultRun = false;
+                    return resultRun;
+                }
             }
-        } else if (numberPartFirst <= 10 && numberPartSecond > 1 && numberPartSecond == numberPartSecond) {
+            for (BoardCell shipCell:listCell) {
+                shipCell.setShip(ship);
+            }
+        } else {
             int count = ship.getLength();
             listCell = new BoardCell[count];
+            leterPartFirst  = leterPartFirst.toUpperCase();
+            leterPartSecond = leterPartSecond.toUpperCase();
+            char charPartFirst = leterPartFirst.charAt(0);
+            char charPartSecond = leterPartSecond.charAt(0);
+            char letter = (charPartFirst > charPartSecond ?charPartSecond:charPartFirst);
+            int  coloms = Math.abs(charPartSecond - charPartFirst)+1;
+            if ( coloms != count) {
+                resultRun = false;
+                return resultRun;
+            }
+            coloms--;
+            int colomsNumber = Math.abs('A' - letter);
+
             for (int i = 0;i < count;i++){
-                listCell[i] = null;
+                listCell[i] = this.getCell(colomsNumber+i, numberPartFirst-1);
+            }
+            for (BoardCell shipCell:listCell) {
+                if (this.checkCellOnShip(shipCell)) {
+                    resultRun = false;
+                    return resultRun;
+                }
+                if (this.checkCellAroundOnShips(shipCell)) {
+                    resultRun = false;
+                    return resultRun;
+                }
+            }
+            for (BoardCell shipCell:listCell) {
+                shipCell.setShip(ship);
             }
         }
 
@@ -178,9 +231,84 @@ class Board {
         return resultRun;
     }
 
-    public BoardCell getCell(int x, int y) {
-        return this.board[x][y];
+
+    public boolean checkCellOnShip(BoardCell boardCell) {
+        boolean resultCheck = true;
+        if (boardCell.getShip() == null) {
+            resultCheck = false;
+            return resultCheck;
+        }
+        return resultCheck;
     }
+    public boolean checkCellAroundOnShips(BoardCell boardCell) {
+        boolean resultCheck = false;
+        ArrayList<BoardCell> listCellArround = new ArrayList<BoardCell>();
+        if (boardCell.getPositionHorizontal() == 0) {
+            // need take 0 and 1
+            if (boardCell.getPositionVertical() == 0) {
+                listCellArround.add(this.getCell(0,1));
+                listCellArround.add(this.getCell(1,1));
+                listCellArround.add(this.getCell(1,0));
+            } else if (boardCell.getPositionVertical() == 9) {
+                listCellArround.add(this.getCell(0,8));
+                listCellArround.add(this.getCell(1,8));
+                listCellArround.add(this.getCell(1,9));
+            } else {
+                listCellArround.add(this.getCell(0,boardCell.getPositionVertical()-1));
+                listCellArround.add(this.getCell(1,boardCell.getPositionVertical()-1));
+                listCellArround.add(this.getCell(1,boardCell.getPositionVertical()+0));
+                listCellArround.add(this.getCell(1,boardCell.getPositionVertical()+1));
+                listCellArround.add(this.getCell(0,boardCell.getPositionVertical()+1));
+            }
+        } else if (boardCell.getPositionHorizontal() == 9) {
+            if (boardCell.getPositionVertical() == 0) {
+                listCellArround.add(this.getCell(8,0));
+                listCellArround.add(this.getCell(8,1));
+                listCellArround.add(this.getCell(9,1));
+            } else if (boardCell.getPositionVertical() == 9) {
+                listCellArround.add(this.getCell(9,8));
+                listCellArround.add(this.getCell(8,8));
+                listCellArround.add(this.getCell(8,9));
+            } else {
+                listCellArround.add(this.getCell(9,boardCell.getPositionVertical()-1));
+                listCellArround.add(this.getCell(8,boardCell.getPositionVertical()-1));
+                listCellArround.add(this.getCell(8,boardCell.getPositionVertical()+0));
+                listCellArround.add(this.getCell(8,boardCell.getPositionVertical()+1));
+                listCellArround.add(this.getCell(9,boardCell.getPositionVertical()+1));
+            }
+        }else {
+            if (boardCell.getPositionVertical() == 0) {
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()-1,0));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()-1,1));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()+0,1));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()+1,1));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()+1,0));
+            } else if (boardCell.getPositionVertical() == 9) {
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()-1,9));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()-1,8));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()+0,8));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()+1,8));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()+1,9));
+            } else {
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()-1,boardCell.getPositionVertical()-1));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()-0,boardCell.getPositionVertical()-1));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()+1,boardCell.getPositionVertical()-1));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()+1,boardCell.getPositionVertical()+0));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()+1,boardCell.getPositionVertical()+1));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()-0,boardCell.getPositionVertical()+1));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()-1,boardCell.getPositionVertical()+1));
+                listCellArround.add(this.getCell(boardCell.getPositionHorizontal()-1,boardCell.getPositionVertical()+0));
+            }
+        }
+        for (BoardCell tBoardCell:listCellArround) {
+            if (tBoardCell.getShip()!=null) {
+                resultCheck = true;
+                return resultCheck;
+            }
+        }
+        return resultCheck;
+    }
+
 }
 
 class Player {
@@ -227,7 +355,6 @@ class Player {
     }
     public String requestCoordinates(Ship ship) {
         String resultMetod = "";
-        System.out.printf("Enter the coordinates of %s (%d cells):\n",ship.getName(),ship.getLength());
         String income = Main.incomeScaner.nextLine();
         String[] coordinatesArray = income.split(" ");
         if (coordinatesArray.length != 2) {
@@ -244,11 +371,17 @@ class Player {
         int numberPartSecond = Integer.parseInt(secondCoordinat.replaceAll("([a-zA-Z])", ""));
         String leterPartSecond  = secondCoordinat.replaceAll("([0-9])", "");;
 
-        if (leterPartFirst.length() == 1 && leterPartSecond.length() == 1 && leterPartSecond.equals(leterPartFirst)){
+        if (numberPartFirst != numberPartSecond && !leterPartSecond.equals(leterPartFirst)) {
+            System.out.println("Error! Wrong ship location! Try again:");
+            return requestCoordinates(ship);
+        }else  if (leterPartFirst.length() == 1 && leterPartSecond.length() == 1 && leterPartSecond.equals(leterPartFirst)){
             if ((Board.allowedLetters.indexOf(leterPartFirst) % 10) == -1) {
                 System.out.println("Error! Wrong ship location! Try again:");
                 return requestCoordinates(ship);
             }else if (numberPartFirst > 10||numberPartSecond > 10) {
+                System.out.println("Error! Wrong ship location! Try again:");
+                return requestCoordinates(ship);
+            }else if (numberPartFirst < 1||numberPartSecond < 1) {
                 System.out.println("Error! Wrong ship location! Try again:");
                 return requestCoordinates(ship);
             }else if ((Math.abs(numberPartFirst - numberPartSecond) + 1) != ship.getLength()) {
@@ -261,9 +394,9 @@ class Player {
         } else if (leterPartFirst.length() > 1 || leterPartSecond.length() > 1) {
             System.out.println("Error! Wrong ship location! Try again:");
             return requestCoordinates(ship);
-        } else if (numberPartFirst <= 10 && numberPartSecond > 1 && numberPartSecond == numberPartSecond) {
-            System.out.println("First - " + leterPartFirst + numberPartFirst);
-            System.out.println("Second - " + leterPartFirst + numberPartSecond);
+        } else if (numberPartFirst <= 10 && numberPartSecond >= 1 && numberPartFirst == numberPartSecond) {
+//            System.out.println("First - " + leterPartFirst + numberPartFirst);
+//            System.out.println("Second - " + leterPartFirst + numberPartSecond);
             //line number
         } else {
             System.out.println("Error! Wrong ship location! Try again:");
@@ -278,10 +411,12 @@ class Player {
 //            }
 //
 //        }
-        return leterPartFirst + numberPartFirst + " " + leterPartFirst + numberPartSecond;
+        return leterPartFirst + numberPartFirst + " " + leterPartSecond + numberPartSecond;
     }
     public String shoting(Player oponent) {
         String resultShoting = "";
+        System.out.println("Take a shot!");
+
         return resultShoting;
     }
     public boolean isAllShipsSunk() {
@@ -314,7 +449,10 @@ class Player {
         for (Ship eachShip :
                 Game.listShip) {
             this.printboard(Board.typeBoard.OWN);
-            while (this.getShipsBoardPlayer().placeShip(eachShip, requestCoordinates(eachShip)) == false) { System.out.println("Wrong"); };
+            System.out.printf("Enter the coordinates of %s (%d cells):\n",eachShip.getName(),eachShip.getLength());
+            while (this.getShipsBoardPlayer().placeShip(eachShip, requestCoordinates(eachShip)) == false) {
+                System.out.println("Error! You placed it too close to another one. Try again:");
+            };
             leftShip.add(eachShip.getName());
         }
     }
