@@ -1,3 +1,5 @@
+//package battleship;
+
 import java.util.Scanner;
 import java.util.ArrayList;
 public class Main {
@@ -5,7 +7,6 @@ public class Main {
     public static final int numberShips = 5;
     public static Scanner incomeScaner = new Scanner(System.in);
     public static void main(String[] args) {
-        System.out.println("Hello world!");
         Game game;
         game = new Game();
         game.start();
@@ -19,34 +20,44 @@ class Game {
     Player p2;
     Game() {
         listShip = new Ship[Main.numberShips];
-        listShip[0] = new Ship("Aircraft Carrier",5);
+        listShip[0] = new Ship("Aircraft Carrier",4);
         listShip[1] = new Ship("Battleship",4);
         listShip[2] = new Ship("Submarine",3);
         listShip[3] = new Ship("Cruiser",3);
         listShip[4] = new Ship("Destroyer",2);
         p1 = new Player("Player 1");
         p2 = new Player("Player 2");
-        //p1 = new ConsolePlayer();
-        //p2 = new MailPlayer();
-        //shipsBoard = new board(p1);
-        //shotsBoard = new board(p1);
+        p1.setOpponent(p2);
+        p2.setOpponent(p1);
     }
     public void start() {
-
+        System.out.println("Player 1, place your ships on the game field");
         p1.fillBoard();
-        p1.printboard(Board.typeBoard.OWN);
-//        p2.fillBoard();
-//        Player player = null, opponent = null;
-//        boolean finished = false;
-        //while(!finished) {
-            //player.printboard();
-//            player = player == p1 ? p2 : p1;
-//            opponent = player == p1 ? p2 : p1;
-//            String shotResult = player.shoting(opponent);
-//            System.out.println(shotResult);
-
-//            finished = opponent.isAllShipsSunk();
-        //}
+        System.out.println("Press Enter and pass the move to another player");
+        Main.incomeScaner.nextLine();
+        System.out.println("Player 2, place your ships to the game field");
+        p2.fillBoard();
+        System.out.println("Press Enter and pass the move to another player");
+        System.out.println("The game starts!");
+        Player player = null, opponent = null;
+        boolean finished = false;
+        while(!finished) {
+            player = player == p1 ? p2 : p1;
+            opponent = player == p1 ? p2 : p1;
+            player.printboard(Board.typeBoard.OPONENT);
+            player.printboard(Board.typeBoard.OWN);
+            System.out.printf("%s, it's your turn:!\n",player.getName());
+            String resultShot = player.shoting(opponent);
+            p1.printboard(Board.typeBoard.OPONENT);
+            System.out.println(resultShot);
+            finished = (player.getOpponent().getLeftShip().isEmpty()?true:false);
+            if (!finished) {
+                System.out.println("Press Enter and pass the move to another player");
+                Main.incomeScaner.nextLine();
+                System.out.print("\033[H\033[2J");
+                System.out.flush();
+            }
+        }
     }
 }
 class BoardCell {
@@ -54,6 +65,8 @@ class BoardCell {
     protected char cellDisplay;
     protected String color;
     protected Ship ship;
+    protected boolean hitHere;
+    protected ArrayList <BoardCell> listCellShip;
 
     protected int positionHorizontal, positionVertical;
 
@@ -69,6 +82,8 @@ class BoardCell {
         this.name = name;
         this.cellDisplay = cellDisplay;
         this.ship = null;
+        this.hitHere = false;
+        this.listCellShip = null;
     }
 
     public void setPosition(int positionHorizontal,int positionVertical) {
@@ -89,6 +104,7 @@ class BoardCell {
         this.cellDisplay = cellDisplay;
         this.color = color;
         this.ship = ship;
+        this.hitHere = false;
     }
 
     public String getName() {
@@ -98,6 +114,7 @@ class BoardCell {
     public void setShip(Ship ship) {
         this.ship = ship;
         this.setCellDisplay('O');
+        this.hitHere = false;
     }
 
     public void setCellDisplay(char cellDisplay) {
@@ -108,6 +125,21 @@ class BoardCell {
         return cellDisplay;
     }
 
+    public ArrayList<BoardCell> getListCellShip() {
+        return listCellShip;
+    }
+
+    public boolean isHitHere() {
+        return hitHere;
+    }
+
+    public void setHitHere(boolean hitHere) {
+        this.hitHere = hitHere;
+    }
+
+    public void setList(ArrayList<BoardCell> listCell) {
+        this.listCellShip = listCell;
+    }
 }
 
 class Board {
@@ -126,6 +158,13 @@ class Board {
         return this.board[x][y];
     }
 
+    public BoardCell getCell(String string) {
+        int number = Integer.parseInt(string.replaceAll("([a-zA-Z])", ""));
+        String leter   = string.replaceAll("([0-9])", "").toUpperCase();
+        char leterChar = leter.charAt(0);
+        int colomsNumber = Math.abs('A' - leterChar);
+        return this.board[colomsNumber][number-1];
+    }
     public BoardCell[][] getBoard() {
         return board;
     }
@@ -141,14 +180,10 @@ class Board {
         }
     }
     public boolean isEmpty(int x, int y){ return true;}
-//    public boolean placeShip(Ship ship, String start, String end) {
-//        boolean resultRun = true;
-//        return resultRun;
-//    }
     public boolean placeShip(Ship ship, String coordinatString) {
         boolean resultRun = true;
         String[] coordinatesArray = coordinatString.split(" ");
-        BoardCell[] listCell;
+        ArrayList<BoardCell> listCell;
 
         String firsCoorfinat = coordinatesArray[0];
         String secondCoordinat = coordinatesArray[1];
@@ -161,7 +196,7 @@ class Board {
         String leterPartSecond  = secondCoordinat.replaceAll("([0-9])", "");;
         if (leterPartFirst.length() == 1 && leterPartSecond.length() == 1 && leterPartSecond.equals(leterPartFirst)){
             int count = ship.getLength();
-            listCell = new BoardCell[count];
+            listCell = new ArrayList<BoardCell>();
             leterPartFirst = leterPartFirst.toUpperCase();
             char letter = leterPartFirst.charAt(0);
             int coloms = Math.abs(numberPartSecond - numberPartFirst)+1;
@@ -170,11 +205,10 @@ class Board {
                 return resultRun;
             }
             int firsPosition = (numberPartFirst>numberPartSecond?numberPartSecond:numberPartFirst);
-            //int lastPosition = (numberPartFirst>numberPartSecond?numberPartSecond:numberPartFirst);;
             coloms--;
             int rowNumber = Math.abs('A' - letter);
             for (int i = 0;i < count;i++){
-                listCell[i] = this.getCell(rowNumber, (firsPosition+i-1));
+                listCell.add(this.getCell(rowNumber, (firsPosition+i-1)));
             }
             for (BoardCell shipCell:listCell) {
                 if (this.checkCellOnShip(shipCell)) {
@@ -188,10 +222,11 @@ class Board {
             }
             for (BoardCell shipCell:listCell) {
                 shipCell.setShip(ship);
+                shipCell.setList(listCell);
             }
         } else {
             int count = ship.getLength();
-            listCell = new BoardCell[count];
+            listCell = new ArrayList<BoardCell>();
             leterPartFirst  = leterPartFirst.toUpperCase();
             leterPartSecond = leterPartSecond.toUpperCase();
             char charPartFirst = leterPartFirst.charAt(0);
@@ -206,7 +241,7 @@ class Board {
             int colomsNumber = Math.abs('A' - letter);
 
             for (int i = 0;i < count;i++){
-                listCell[i] = this.getCell(colomsNumber+i, numberPartFirst-1);
+                listCell.add(this.getCell(colomsNumber+i, numberPartFirst-1));
             }
             for (BoardCell shipCell:listCell) {
                 if (this.checkCellOnShip(shipCell)) {
@@ -220,14 +255,20 @@ class Board {
             }
             for (BoardCell shipCell:listCell) {
                 shipCell.setShip(ship);
+                shipCell.setList(listCell);
             }
         }
 
 
         return resultRun;
     }
-    public boolean checkLine(String start, String end) {
+    public boolean sankShip(String coordinateLine) {
         boolean resultRun = true;
+        BoardCell cellShip = this.getCell(coordinateLine);
+        for (BoardCell shipCell:cellShip.getListCellShip()) {
+            if (shipCell.isHitHere() == false) {
+                resultRun = false;}
+        }
         return resultRun;
     }
 
@@ -314,6 +355,7 @@ class Board {
 class Player {
     protected Board shipsBoardPlayer,ShipsBoardOponent;
     protected String name;
+    protected Player opponent;
 
     ArrayList<String> leftShip;
     protected int numberStep;
@@ -333,6 +375,10 @@ class Player {
         this.leftShip = new ArrayList<>();
     }
 
+    public String getName() {
+        return name;
+    }
+
     public void setShipsBoardPlayer(Board shipsBoardPlayer) {
         this.shipsBoardPlayer = shipsBoardPlayer;
     }
@@ -342,6 +388,18 @@ class Player {
     }
     public void setShipsBoardOponent(Board shipsBoardOponent) {
         ShipsBoardOponent = shipsBoardOponent;
+    }
+
+    public Player getOpponent() {
+        return opponent;
+    }
+
+    public ArrayList<String> getLeftShip() {
+        return leftShip;
+    }
+
+    public void setOpponent(Player opponent) {
+        this.opponent = opponent;
     }
 
     public void makeBoardPlayer() {
@@ -366,9 +424,9 @@ class Player {
         //check that is a line
         //1 line same liters
         //2 line same numbers
-        int numberPartFirst = Integer.parseInt(firsCoorfinat.replaceAll("([a-zA-Z])", ""));
+        int numberPartFirst    = Integer.parseInt(firsCoorfinat.replaceAll("([a-zA-Z])", ""));
         String leterPartFirst  = firsCoorfinat.replaceAll("([0-9])", "");;
-        int numberPartSecond = Integer.parseInt(secondCoordinat.replaceAll("([a-zA-Z])", ""));
+        int numberPartSecond    = Integer.parseInt(secondCoordinat.replaceAll("([a-zA-Z])", ""));
         String leterPartSecond  = secondCoordinat.replaceAll("([0-9])", "");;
 
         if (numberPartFirst != numberPartSecond && !leterPartSecond.equals(leterPartFirst)) {
@@ -415,8 +473,46 @@ class Player {
     }
     public String shoting(Player oponent) {
         String resultShoting = "";
-        System.out.println("Take a shot!");
-
+        String incomeString = "";
+        boolean tryShoot = true;
+        while (tryShoot){
+            incomeString = Main.incomeScaner.nextLine();
+            int numberShot    = Integer.parseInt(incomeString.replaceAll("([a-zA-Z])", ""));
+            String leterShot  = incomeString.replaceAll("([0-9])", "");;
+            if (numberShot >10 || numberShot <1) {
+                System.out.println("Error! You entered the wrong coordinates! Try again:");
+            } else if (leterShot.length() != 1 || Board.allowedLetters.indexOf(leterShot) % 10 == -1) {
+                System.out.println("Error! You entered the wrong coordinates! Try again:");
+            } else {
+                tryShoot = false;
+            }
+        }
+        Board playBoard = this.getOpponent().getShipsBoardPlayer(Board.typeBoard.OWN);
+        BoardCell shotInCell = playBoard.getCell(incomeString);
+        if (shotInCell.getShip()==null) {
+            //miss
+            resultShoting = "You missed!";
+            shotInCell.setCellDisplay('M');
+            this.getShipsBoardPlayer(Board.typeBoard.OPONENT).getCell(incomeString).setCellDisplay('M');;
+            this.getOpponent().getShipsBoardPlayer(Board.typeBoard.OWN).getCell(incomeString).setCellDisplay('M');;
+        }else {
+            //hit
+            boolean allShipSank = false;
+            shotInCell.setCellDisplay('X');
+            shotInCell.setHitHere(true);
+            this.getShipsBoardPlayer(Board.typeBoard.OPONENT).getCell(incomeString).setCellDisplay('X');;
+            this.getOpponent().getShipsBoardPlayer(Board.typeBoard.OWN).getCell(incomeString).setCellDisplay('X');;
+            boolean sankShip = this.getOpponent().getShipsBoardPlayer(Board.typeBoard.OWN).sankShip(incomeString);
+            if (sankShip) {
+                this.getOpponent().getLeftShip().remove( this.getOpponent().getShipsBoardPlayer(Board.typeBoard.OWN).getCell(incomeString).getShip().getName());
+                allShipSank = this.getOpponent().getLeftShip().isEmpty();
+            }
+            if (allShipSank) {
+                resultShoting = "You sank the last ship. You won. Congratulations!";
+            } else {
+                resultShoting = (sankShip?"You sank a ship! Specify a new target:":"You hit a ship!");
+            }
+        }
         return resultShoting;
     }
     public boolean isAllShipsSunk() {
