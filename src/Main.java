@@ -20,7 +20,7 @@ class Game {
     Player p2;
     Game() {
         listShip = new Ship[Main.numberShips];
-        listShip[0] = new Ship("Aircraft Carrier",4);
+        listShip[0] = new Ship("Aircraft Carrier",5);
         listShip[1] = new Ship("Battleship",4);
         listShip[2] = new Ship("Submarine",3);
         listShip[3] = new Ship("Cruiser",3);
@@ -33,11 +33,15 @@ class Game {
     public void start() {
         System.out.println("Player 1, place your ships on the game field");
         p1.fillBoard();
+        p1.printboard(Board.typeBoard.OWN);
         System.out.println("Press Enter and pass the move to another player");
+        System.out.println("...");
         Main.incomeScaner.nextLine();
         System.out.println("Player 2, place your ships to the game field");
         p2.fillBoard();
+        p2.printboard(Board.typeBoard.OWN);
         System.out.println("Press Enter and pass the move to another player");
+        Main.incomeScaner.nextLine();
         System.out.println("The game starts!");
         Player player = null, opponent = null;
         boolean finished = false;
@@ -45,17 +49,17 @@ class Game {
             player = player == p1 ? p2 : p1;
             opponent = player == p1 ? p2 : p1;
             player.printboard(Board.typeBoard.OPONENT);
+            System.out.println("---------------------");
             player.printboard(Board.typeBoard.OWN);
             System.out.printf("%s, it's your turn:!\n",player.getName());
             String resultShot = player.shoting(opponent);
-            p1.printboard(Board.typeBoard.OPONENT);
+            // p1.printboard(Board.typeBoard.OPONENT);
             System.out.println(resultShot);
             finished = (player.getOpponent().getLeftShip().isEmpty()?true:false);
             if (!finished) {
                 System.out.println("Press Enter and pass the move to another player");
+                System.out.println("...");
                 Main.incomeScaner.nextLine();
-                System.out.print("\033[H\033[2J");
-                System.out.flush();
             }
         }
     }
@@ -448,27 +452,17 @@ class Player {
             }
             resultMetod = leterPartFirst + numberPartFirst + " " + leterPartFirst + numberPartSecond;
             return resultMetod;
-             // leter line
+            // leter line
         } else if (leterPartFirst.length() > 1 || leterPartSecond.length() > 1) {
             System.out.println("Error! Wrong ship location! Try again:");
             return requestCoordinates(ship);
         } else if (numberPartFirst <= 10 && numberPartSecond >= 1 && numberPartFirst == numberPartSecond) {
-//            System.out.println("First - " + leterPartFirst + numberPartFirst);
-//            System.out.println("Second - " + leterPartFirst + numberPartSecond);
             //line number
         } else {
             System.out.println("Error! Wrong ship location! Try again:");
             return requestCoordinates(ship);
         }
 
-//        for (String eachNumber:coordinatesArray) {
-//            if (Integer.parseInt(numberPart) <= Main.sizeBoard && Integer.parseInt(numberPart) >0 ) {
-//                //all good with number
-//                ; }else {
-//                ;
-//            }
-//
-//        }
         return leterPartFirst + numberPartFirst + " " + leterPartSecond + numberPartSecond;
     }
     public String shoting(Player oponent) {
@@ -476,7 +470,7 @@ class Player {
         String incomeString = "";
         boolean tryShoot = true;
         while (tryShoot){
-            incomeString = Main.incomeScaner.nextLine();
+            incomeString = Main.incomeScaner.nextLine().trim();
             int numberShot    = Integer.parseInt(incomeString.replaceAll("([a-zA-Z])", ""));
             String leterShot  = incomeString.replaceAll("([0-9])", "");;
             if (numberShot >10 || numberShot <1) {
